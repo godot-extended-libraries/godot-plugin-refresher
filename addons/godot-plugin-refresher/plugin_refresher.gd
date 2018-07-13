@@ -6,6 +6,8 @@ signal request_refresh_plugin(p_name)
 onready var options = $OptionButton
 
 func reload_items():
+	if not options:
+		return
 	var dir = Directory.new()
 	dir.change_dir("res://addons/")
 	dir.list_dir_begin(true, true)
