@@ -5,6 +5,9 @@ signal request_refresh_plugin(p_name)
 
 onready var options = $OptionButton
 
+func _ready():
+	reload_items()
+
 func reload_items():
 	if not options:
 		return

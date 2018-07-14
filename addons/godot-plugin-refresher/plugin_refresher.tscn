@@ -82,5 +82,6 @@ group = null
 icon = ExtResource( 2 )
 flat = true
 align = 1
+_sections_unfolded = [ "icon" ]
 
 [connection signal="pressed" from="RefreshButton" to="." method="_on_RefreshButton_pressed"]
