@@ -21,4 +21,4 @@ You instead just...
 2. Select your WIP plugin (first time).
 3. Click the refresh button.
 
-Please consider starring the repo if you like the project and let me know if you have any feedback for bugs / feature improvements in the Issues. Cheers!
+Please consider starring the repo if you like the project and let me know if you have any feedback for bugs / feature improvements in the Issues. If you'd like to support my work, please [send tips to my Kofi](https://ko-fi.com/willnationsdev). Cheers!
