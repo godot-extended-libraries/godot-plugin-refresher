@@ -16,7 +16,16 @@ func _enter_tree():
 	refresher = PluginRefresherScn.instance()
 	add_control_to_container(CONTAINER_TOOLBAR, refresher)
 
-	var efs = get_editor_interface().get_resource_filesystem()
+	var eds = get_editor_interface()
+
+	# Set reload icon from Godot's own theme
+	var godot_editor = eds.get_base_control()
+	var reload_icon = godot_editor.theme.get_icon('Reload', 'EditorIcons')
+	assert(reload_icon != null)
+	refresher.set_refresh_button_icon(reload_icon)
+
+	# Watch whether any plugin is changed, added or removed on the filesystem
+	var efs = eds.get_resource_filesystem()
 	efs.connect("filesystem_changed", self, "_on_filesystem_changed")
 
 	refresher.connect("request_refresh_plugin", self, "_on_request_refresh_plugin")
