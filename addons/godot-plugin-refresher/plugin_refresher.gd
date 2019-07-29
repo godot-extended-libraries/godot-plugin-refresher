@@ -35,6 +35,9 @@ func select_plugin(p_name):
 		if plugin == p_name:
 			options.selected = options.get_item_id(idx)
 
+func set_refresh_button_icon(p_icon):
+	$RefreshButton.icon = p_icon
+
 func _on_RefreshButton_pressed():
 	if options.selected == -1:
 		return # nothing selected
