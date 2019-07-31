@@ -5,6 +5,7 @@ const ADDONS_PATH = "res://addons/"
 const PLUGIN_PATH = "godot-plugin-refresher"
 
 signal request_refresh_plugin(p_name)
+signal confirm_refresh_plugin(p_name)
 
 onready var options = $OptionButton
 
@@ -34,6 +35,7 @@ func select_plugin(p_name):
 		var plugin = options.get_item_text(idx)
 		if plugin == p_name:
 			options.selected = options.get_item_id(idx)
+			break
 
 func set_refresh_button_icon(p_icon):
 	$RefreshButton.icon = p_icon
@@ -46,3 +48,14 @@ func _on_RefreshButton_pressed():
 	if not plugin or plugin.empty():
 		return
 	emit_signal("request_refresh_plugin", plugin)
+
+func show_warning(p_name):
+	$ConfirmationDialog.dialog_text = """
+		Plugin `%s` is currently disabled.\n
+		Do you want to enable it now?
+	""" % [p_name]
+	$ConfirmationDialog.popup_centered()
+
+func _on_ConfirmationDialog_confirmed():
+	var plugin = options.get_item_text(options.selected)
+	emit_signal('confirm_refresh_plugin', plugin)
