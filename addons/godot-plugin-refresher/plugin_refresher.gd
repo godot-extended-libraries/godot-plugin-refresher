@@ -10,6 +10,7 @@ signal confirm_refresh_plugin(p_name)
 onready var options = $OptionButton
 
 func _ready():
+	$RefreshButton.icon = get_icon('Reload', 'EditorIcons')
 	reload_items()
 
 func reload_items():
@@ -36,9 +37,6 @@ func select_plugin(p_name):
 		if plugin == p_name:
 			options.selected = options.get_item_id(idx)
 			break
-
-func set_refresh_button_icon(p_icon):
-	$RefreshButton.icon = p_icon
 
 func _on_RefreshButton_pressed():
 	if options.selected == -1:
