@@ -29,6 +29,7 @@ func _enter_tree():
 	efs.connect("filesystem_changed", self, "_on_filesystem_changed")
 
 	refresher.connect("request_refresh_plugin", self, "_on_request_refresh_plugin")
+	refresher.connect("confirm_refresh_plugin", self, "_on_confirm_refresh_plugin")
 
 	_load_settings()
 
@@ -71,11 +72,24 @@ func get_recent_plugin():
 	return recent
 
 func _on_request_refresh_plugin(p_name):
-	print("Refreshing plugin: ", p_name)
-
 	assert(not p_name.empty())
 
-	get_editor_interface().set_plugin_enabled(p_name, false)
+	var disabled = not get_editor_interface().is_plugin_enabled(p_name)
+	if disabled:
+		refresher.show_warning(p_name)
+	else:
+		refresh_plugin(p_name)
+
+func _on_confirm_refresh_plugin(p_name):
+	refresh_plugin(p_name)
+
+func refresh_plugin(p_name):
+	print("Refreshing plugin: ", p_name)
+
+	var enabled = get_editor_interface().is_plugin_enabled(p_name)
+	if enabled: # can only disable an active plugin
+		get_editor_interface().set_plugin_enabled(p_name, false)
+
 	get_editor_interface().set_plugin_enabled(p_name, true)
 
 	plugin_config.set_value(SETTINGS, SETTING_RECENT, p_name)
