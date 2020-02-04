@@ -1,19 +1,17 @@
 tool
 extends EditorPlugin
 
+const ADDONS_PATH = "res://addons/"
 const PLUGIN_CONFIG_DIR = 'plugins/plugin_refresher'
 const PLUGIN_CONFIG = 'settings.cfg'
 const SETTINGS = 'settings'
 const SETTING_RECENT = 'recently_used'
 
 var plugin_config = ConfigFile.new()
-
-const PluginRefresherScn = preload("plugin_refresher.tscn")
-
 var refresher
 
 func _enter_tree():
-	refresher = PluginRefresherScn.instance()
+	refresher = preload("plugin_refresher.tscn").instance()
 	add_control_to_container(CONTAINER_TOOLBAR, refresher)
 
 	# Watch whether any plugin is changed, added or removed on the filesystem
@@ -23,11 +21,27 @@ func _enter_tree():
 	refresher.connect("request_refresh_plugin", self, "_on_request_refresh_plugin")
 	refresher.connect("confirm_refresh_plugin", self, "_on_confirm_refresh_plugin")
 
+	_reload_plugins_list()
 	_load_settings()
 
 func _exit_tree():
 	remove_control_from_container(CONTAINER_TOOLBAR, refresher)
 	refresher.free()
+
+func _reload_plugins_list():
+	var refresher_dir = get_plugin_path().get_file()
+	var plugin_names = []
+
+	var dir = Directory.new()
+	dir.change_dir(ADDONS_PATH)
+	dir.list_dir_begin(true, true)
+	var file = dir.get_next()
+	while file:
+		if dir.dir_exists(ADDONS_PATH.plus_file(file)) and file != refresher_dir:
+			plugin_names.append(file)
+		file = dir.get_next()
+
+	refresher.update_items(plugin_names)
 
 func _load_settings():
 	var path = get_config_path()
@@ -53,7 +67,7 @@ func get_config_path():
 
 func _on_filesystem_changed():
 	if refresher:
-		refresher.reload_items()
+		_reload_plugins_list()
 		refresher.select_plugin(get_recent_plugin())
 
 func get_recent_plugin():
@@ -74,6 +88,9 @@ func _on_request_refresh_plugin(p_name):
 
 func _on_confirm_refresh_plugin(p_name):
 	refresh_plugin(p_name)
+
+func get_plugin_path():
+	return get_script().resource_path.get_base_dir()
 
 func refresh_plugin(p_name):
 	print("Refreshing plugin: ", p_name)
