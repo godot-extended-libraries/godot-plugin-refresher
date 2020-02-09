@@ -1,9 +1,6 @@
 tool
 extends HBoxContainer
 
-const ADDONS_PATH = "res://addons/"
-const PLUGIN_PATH = "godot-plugin-refresher"
-
 signal request_refresh_plugin(p_name)
 signal confirm_refresh_plugin(p_name)
 
@@ -11,20 +8,13 @@ onready var options = $OptionButton
 
 func _ready():
 	$RefreshButton.icon = get_icon('Reload', 'EditorIcons')
-	reload_items()
 
-func reload_items():
+func update_items(p_plugins):
 	if not options:
 		return
-	var dir = Directory.new()
-	dir.change_dir(ADDONS_PATH)
-	dir.list_dir_begin(true, true)
-	var file = dir.get_next()
 	options.clear()
-	while file:
-		if dir.dir_exists(ADDONS_PATH.plus_file(file)) and file != PLUGIN_PATH:
-			options.add_item(file)
-		file = dir.get_next()
+	for plugin_name in p_plugins:
+		options.add_item(plugin_name)
 
 func select_plugin(p_name):
 	if not options:
