@@ -30,18 +30,38 @@ func _exit_tree():
 
 func _reload_plugins_list():
 	var refresher_dir = get_plugin_path().get_file()
-	var plugin_names = []
+	var plugins = {}
+	var origins = {}
 
 	var dir = Directory.new()
-	dir.change_dir(ADDONS_PATH)
+	dir.open(ADDONS_PATH)
 	dir.list_dir_begin(true, true)
 	var file = dir.get_next()
 	while file:
-		if dir.dir_exists(ADDONS_PATH.plus_file(file)) and file != refresher_dir:
-			plugin_names.append(file)
+		var addon_dir = ADDONS_PATH.plus_file(file)
+		if dir.dir_exists(addon_dir) and file != refresher_dir:
+			var display_name = file
+			var plugin_config_path = addon_dir.plus_file("plugin.cfg")
+			if not dir.file_exists(plugin_config_path):
+				continue # not a plugin
+			var plugin_cfg = ConfigFile.new()
+			plugin_cfg.load(plugin_config_path)
+			display_name = plugin_cfg.get_value("plugin", "name", file)
+			if not display_name in origins:
+				origins[display_name] = [file]
+			else:
+				origins[display_name].append(file)
+			plugins[file] = display_name
 		file = dir.get_next()
 
-	refresher.update_items(plugin_names)
+	# Specify the exact plugin name in parenthesis in case of naming collisions.
+	for display_name in origins:
+		var plugin_names = origins[display_name]
+		if plugin_names.size() > 1:
+			for n in plugin_names:
+				plugins[n] = "%s (%s)" % [display_name, n]
+
+	refresher.update_items(plugins)
 
 func _load_settings():
 	var path = get_config_path()
