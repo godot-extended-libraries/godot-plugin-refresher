@@ -43,6 +43,7 @@ func _reload_plugins_list():
 			var display_name = file
 			var plugin_config_path = addon_dir.plus_file("plugin.cfg")
 			if not dir.file_exists(plugin_config_path):
+				file = dir.get_next()
 				continue # not a plugin
 			var plugin_cfg = ConfigFile.new()
 			plugin_cfg.load(plugin_config_path)
