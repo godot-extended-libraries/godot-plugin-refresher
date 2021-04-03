@@ -2,7 +2,7 @@
 
 This plugin simplifies plugin development for those wanting to make tools for the Godot Editor.
 
-It adds a dropdown and refresh button to the toolbar. *Other* plugins' directory names will show up in the dropdown, and clicking the refresh button will simply toggle the plugin off and then back on.
+It adds a dropdown and refresh button to the main toolbar in the top-right corner of the Godot Editor. *Other* plugins' directory names will show up in the dropdown, and clicking the refresh button will simply toggle the plugin off and then back on.
 
 This makes it much easier to iterate on a single plugin since rather than having to...
 
