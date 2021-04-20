@@ -7,7 +7,8 @@ signal confirm_refresh_plugin(p_name)
 onready var options = $OptionButton
 
 func _ready():
-	$RefreshButton.icon = get_icon('Reload', 'EditorIcons')
+	$RefreshButton.icon = get_icon("Reload", "EditorIcons")
+
 
 func update_items(p_plugins):
 	if not options:
@@ -19,6 +20,7 @@ func update_items(p_plugins):
 		var plugin_name = p_plugins[plugin_dirname]
 		options.add_item(plugin_name, idx)
 		options.set_item_metadata(idx, plugin_dirname)
+
 
 func select_plugin(p_name):
 	if not options:
@@ -32,6 +34,7 @@ func select_plugin(p_name):
 			options.selected = options.get_item_id(idx)
 			break
 
+
 func _on_RefreshButton_pressed():
 	if options.selected == -1:
 		return # nothing selected
@@ -41,6 +44,7 @@ func _on_RefreshButton_pressed():
 		return
 	emit_signal("request_refresh_plugin", plugin)
 
+
 func show_warning(p_name):
 	$ConfirmationDialog.dialog_text = """
 		Plugin `%s` is currently disabled.\n
@@ -48,6 +52,7 @@ func show_warning(p_name):
 	""" % [p_name]
 	$ConfirmationDialog.popup_centered()
 
+
 func _on_ConfirmationDialog_confirmed():
 	var plugin = options.get_item_metadata(options.selected)
-	emit_signal('confirm_refresh_plugin', plugin)
+	emit_signal("confirm_refresh_plugin", plugin)
