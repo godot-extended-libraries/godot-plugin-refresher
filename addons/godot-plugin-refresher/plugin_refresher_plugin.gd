@@ -2,10 +2,10 @@ tool
 extends EditorPlugin
 
 const ADDONS_PATH = "res://addons/"
-const PLUGIN_CONFIG_DIR = 'plugins/plugin_refresher'
-const PLUGIN_CONFIG = 'settings.cfg'
-const SETTINGS = 'settings'
-const SETTING_RECENT = 'recently_used'
+const PLUGIN_CONFIG_DIR = "plugins/plugin_refresher"
+const PLUGIN_CONFIG = "settings.cfg"
+const SETTINGS = "settings"
+const SETTING_RECENT = "recently_used"
 
 var plugin_config = ConfigFile.new()
 var refresher
@@ -24,9 +24,11 @@ func _enter_tree():
 	_reload_plugins_list()
 	_load_settings()
 
+
 func _exit_tree():
 	remove_control_from_container(CONTAINER_TOOLBAR, refresher)
 	refresher.free()
+
 
 func _reload_plugins_list():
 	var refresher_dir = get_plugin_path().get_file()
@@ -64,6 +66,7 @@ func _reload_plugins_list():
 
 	refresher.update_items(plugins)
 
+
 func _load_settings():
 	var path = get_config_path()
 
@@ -76,8 +79,10 @@ func _load_settings():
 	else:
 		plugin_config.load(path)
 
+
 func _save_settings():
 	plugin_config.save(get_config_path())
+
 
 func get_config_path():
 	var dir = get_editor_interface().get_editor_settings().get_project_settings_dir()
@@ -86,10 +91,12 @@ func get_config_path():
 
 	return path
 
+
 func _on_filesystem_changed():
 	if refresher:
 		_reload_plugins_list()
 		refresher.select_plugin(get_recent_plugin())
+
 
 func get_recent_plugin():
 	if not plugin_config.has_section_key(SETTINGS, SETTING_RECENT):
@@ -97,6 +104,7 @@ func get_recent_plugin():
 
 	var recent = plugin_config.get_value(SETTINGS, SETTING_RECENT)
 	return recent
+
 
 func _on_request_refresh_plugin(p_name):
 	assert(not p_name.empty())
@@ -107,11 +115,14 @@ func _on_request_refresh_plugin(p_name):
 	else:
 		refresh_plugin(p_name)
 
+
 func _on_confirm_refresh_plugin(p_name):
 	refresh_plugin(p_name)
 
+
 func get_plugin_path():
 	return get_script().resource_path.get_base_dir()
+
 
 func refresh_plugin(p_name):
 	print("Refreshing plugin: ", p_name)
