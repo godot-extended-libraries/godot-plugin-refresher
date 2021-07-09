@@ -7,6 +7,8 @@ signal confirm_refresh_plugin(p_name)
 onready var options = $OptionButton
 
 func _ready():
+	if get_tree().edited_scene_root == self:
+		return # This is the scene opened in the editor!
 	$RefreshButton.icon = get_icon("Reload", "EditorIcons")
 
 
