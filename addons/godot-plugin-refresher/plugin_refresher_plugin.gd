@@ -1,25 +1,25 @@
-tool
+@tool
 extends EditorPlugin
 
-const ADDONS_PATH = "res://addons/"
-const PLUGIN_CONFIG_DIR = "plugins/plugin_refresher"
-const PLUGIN_CONFIG = "settings.cfg"
-const SETTINGS = "settings"
-const SETTING_RECENT = "recently_used"
+const ADDONS_PATH:StringName = StringName( "res://addons/" )
+const PLUGIN_CONFIG_DIR:StringName = StringName( "plugins/plugin_refresher" )
+const PLUGIN_CONFIG:StringName = StringName( "settings.cfg" )
+const SETTINGS:StringName = StringName( "settings" )
+const SETTING_RECENT:StringName = StringName( "recently_used" )
 
-var plugin_config = ConfigFile.new()
-var refresher
-
+var plugin_config := ConfigFile.new()
+var refresher:Control
+var ps:PackedScene = preload("res://addons/godot-plugin-refresher/plugin_refresher.tscn")
 func _enter_tree():
-	refresher = preload("plugin_refresher.tscn").instance()
+	refresher = ps.instantiate()
 	add_control_to_container(CONTAINER_TOOLBAR, refresher)
 
 	# Watch whether any plugin is changed, added or removed on the filesystem
 	var efs = get_editor_interface().get_resource_filesystem()
-	efs.connect("filesystem_changed", self, "_on_filesystem_changed")
+	efs.connect("filesystem_changed", _on_filesystem_changed)
 
-	refresher.connect("request_refresh_plugin", self, "_on_request_refresh_plugin")
-	refresher.connect("confirm_refresh_plugin", self, "_on_confirm_refresh_plugin")
+	refresher.connect("request_refresh_plugin", _on_request_refresh_plugin)
+	refresher.connect("confirm_refresh_plugin", _on_confirm_refresh_plugin)
 
 	_reload_plugins_list()
 	_load_settings()
@@ -40,7 +40,7 @@ func _reload_plugins_list():
 	dir.list_dir_begin(true, true)
 	var file = dir.get_next()
 	while file:
-		var addon_dir = ADDONS_PATH.plus_file(file)
+		var addon_dir = str(ADDONS_PATH) + file #ADDONS_PATH.plus_file(file)
 		if dir.dir_exists(addon_dir) and file != refresher_dir:
 			var display_name = file
 			var plugin_config_path = addon_dir.plus_file("plugin.cfg")
