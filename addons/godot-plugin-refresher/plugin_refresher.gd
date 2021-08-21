@@ -1,15 +1,16 @@
-tool
+@tool
 extends HBoxContainer
 
 signal request_refresh_plugin(p_name)
 signal confirm_refresh_plugin(p_name)
 
-onready var options = $OptionButton
+@onready var options := $OptionButton
 
 func _ready():
 	if get_tree().edited_scene_root == self:
 		return # This is the scene opened in the editor!
-	$RefreshButton.icon = get_icon("Reload", "EditorIcons")
+	$RefreshButton.icon = get_theme_icon("Reload", "EditorIcons")
+	
 
 
 func update_items(p_plugins):
