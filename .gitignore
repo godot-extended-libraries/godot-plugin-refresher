@@ -5,6 +5,9 @@
 .import/
 export.cfg
 export_presets.cfg
+addons/asd
+addons/tyu
+
 
 # Imported translations (automatically generated from CSV files)
 *.translation
