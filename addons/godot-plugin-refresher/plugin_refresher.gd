@@ -1,9 +1,9 @@
 tool
 extends HBoxContainer
 
-# warnings-disable
 signal request_refresh_plugin(p_name)
 signal request_enable_plugin(p_name)
+#warning-ignore:unused_signal
 signal request_disable_plugin(p_name)
 signal plugin_changed(p_name)
 
