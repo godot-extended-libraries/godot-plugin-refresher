@@ -15,12 +15,10 @@ onready var options = $OptionButton as OptionButton
 onready var refresh = $RefreshButton as Button
 
 var refresh_icon : Texture
-var menu_icon : Texture
 
 func _ready() -> void:
 	var _cur_scene = get_tree().edited_scene_root
 	assert(_cur_scene != self, "Scene: '%s' is opened in editor!" % _cur_scene)
-	$MenuButton.icon = menu_icon
 	refresh.icon = refresh_icon
 	assert(OK == checkbox.connect("toggled", self, "_on_CheckBox_toggled"))
 	assert(OK == options.connect("item_selected", self, "_on_OptionsItem_selected"))

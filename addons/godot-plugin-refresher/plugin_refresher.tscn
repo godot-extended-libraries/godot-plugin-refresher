@@ -14,34 +14,28 @@ __meta__ = {
 margin_right = 4.0
 margin_bottom = 40.0
 
-[node name="MenuButton" type="MenuButton" parent="."]
-margin_left = 8.0
-margin_right = 20.0
-margin_bottom = 40.0
-items = [ "Item 0", null, 0, false, false, 0, 0, null, "", false ]
-
 [node name="CheckBox" type="CheckBox" parent="."]
-margin_left = 24.0
-margin_right = 48.0
+margin_left = 8.0
+margin_right = 32.0
 margin_bottom = 40.0
 __meta__ = {
 "_edit_use_anchors_": false
 }
 
 [node name="OptionButton" type="OptionButton" parent="."]
-margin_left = 52.0
-margin_right = 202.0
+margin_left = 36.0
+margin_right = 186.0
 margin_bottom = 40.0
 rect_min_size = Vector2( 150, 0 )
 
 [node name="RefreshButton" type="ToolButton" parent="."]
-margin_left = 206.0
-margin_right = 218.0
+margin_left = 190.0
+margin_right = 202.0
 margin_bottom = 40.0
 
 [node name="ConfirmationDialog" type="ConfirmationDialog" parent="."]
-margin_left = 222.0
-margin_right = 522.0
+margin_left = 206.0
+margin_right = 506.0
 margin_bottom = 70.0
 rect_min_size = Vector2( 300, 70 )
 window_title = "Plugin Refresher"

@@ -2,13 +2,12 @@ tool
 extends EditorPlugin
 
 var plugin_config = ConfigFile.new() as ConfigFile
-var refresher_scene = load("./plugin_refresher.tscn") as PackedScene
+var refresher_scene = load("res://addons/godot-plugin-refresher/plugin_refresher.tscn") as PackedScene
 var refresher : HBoxContainer
 
 func _enter_tree() -> void:
 	refresher = refresher_scene.instance()
 	var _theme = get_editor_interface().get_base_control()
-	refresher.menu_icon = _theme.get_icon("GuiTabMenu", "EditorIcons")
 	refresher.refresh_icon = _theme.get_icon("Reload", "EditorIcons")
 	add_control_to_container(CONTAINER_TOOLBAR, refresher)
 	var _editor_fs: EditorFileSystem = get_editor_interface().get_resource_filesystem()
@@ -67,7 +66,6 @@ func get_config_path() -> String:
 
 func _exit_tree() -> void:
 	remove_control_from_container(CONTAINER_TOOLBAR, refresher)
-	refresher.queue_free()
 
 func save_settings() -> void:
 	plugin_config.save(get_config_path())
