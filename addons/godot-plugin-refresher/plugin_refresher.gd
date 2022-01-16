@@ -1,60 +1,80 @@
 tool
 extends HBoxContainer
 
+# warnings-disable
 signal request_refresh_plugin(p_name)
-signal confirm_refresh_plugin(p_name)
+signal request_enable_plugin(p_name)
+signal request_disable_plugin(p_name)
+signal plugin_changed(p_name)
 
-onready var options = $OptionButton
+var cur_plugin := ""
+var enabled := false
 
-func _ready():
-	if get_tree().edited_scene_root == self:
-		return # This is the scene opened in the editor!
-	$RefreshButton.icon = get_icon("Reload", "EditorIcons")
+onready var checkbox = $CheckBox as CheckBox
+onready var options = $OptionButton as OptionButton
+onready var refresh = $RefreshButton as Button
 
+var refresh_icon : Texture
+var menu_icon : Texture
 
-func update_items(p_plugins):
-	if not options:
+func _ready() -> void:
+	var _cur_scene = get_tree().edited_scene_root
+	assert(_cur_scene != self, "Scene: '%s' is opened in editor!" % _cur_scene)
+	$MenuButton.icon = menu_icon
+	refresh.icon = refresh_icon
+	assert(OK == checkbox.connect("toggled", self, "_on_CheckBox_toggled"))
+	assert(OK == options.connect("item_selected", self, "_on_OptionsItem_selected"))
+	assert(OK == refresh.connect("pressed", self, "_on_RefreshButton_pressed"))
+	assert(OK == $ConfirmationDialog.connect("confirmed", self, "_on_ConfirmationDialog_confirmed"))
+
+func update_items(_plugins : Dictionary) -> void:
+	if !options:
 		return
 	options.clear()
-	var plugin_dirs = p_plugins.keys()
-	for idx in plugin_dirs.size():
-		var plugin_dirname = plugin_dirs[idx]
-		var plugin_name = p_plugins[plugin_dirname]
-		options.add_item(plugin_name, idx)
-		options.set_item_metadata(idx, plugin_dirname)
+	var _dirs = _plugins.keys()
+	for i in _dirs.size():
+		var _dirname = _dirs[i]
+		options.add_item(_plugins[_dirname], i)
+		options.set_item_metadata(i, _dirname)
+	if cur_plugin.empty():
+		if options.get_item_count() == 0:
+			return
+		cur_plugin = options.get_item_metadata(0)
+		emit_signal("plugin_changed", cur_plugin)
+		checkbox.pressed = enabled
 
-
-func select_plugin(p_name):
-	if not options:
+func select_plugin(p_name : String) -> void:
+	if !options or p_name.empty():
 		return
-	if p_name == null or p_name.empty():
-		return
-
-	for idx in options.get_item_count():
-		var plugin = options.get_item_metadata(idx)
-		if plugin == p_name:
-			options.selected = options.get_item_id(idx)
+	for i in options.get_item_count():
+		cur_plugin = options.get_item_metadata(i)
+		if cur_plugin == p_name:
+			options.selected = options.get_item_id(i)
+			emit_signal("plugin_changed", cur_plugin)
+			checkbox.pressed = enabled
 			break
 
-
-func _on_RefreshButton_pressed():
-	if options.selected == -1:
-		return # nothing selected
-
-	var plugin = options.get_item_metadata(options.selected)
-	if not plugin or plugin.empty():
-		return
-	emit_signal("request_refresh_plugin", plugin)
-
-
-func show_warning(p_name):
-	$ConfirmationDialog.dialog_text = """
-		Plugin `%s` is currently disabled.\n
-		Do you want to enable it now?
-	""" % [p_name]
+func show_warning(_p_name : String) -> void:
+	var _text = "Plugin '%s' is disabled.\n Do you want to enable it?" % _p_name
+	$ConfirmationDialog.dialog_text = _text
 	$ConfirmationDialog.popup_centered()
 
+func _on_OptionsItem_selected(_ind : int) -> void:
+	cur_plugin = options.get_item_metadata(options.selected)
+	emit_signal("plugin_changed", cur_plugin)
+	checkbox.pressed = enabled
 
-func _on_ConfirmationDialog_confirmed():
-	var plugin = options.get_item_metadata(options.selected)
-	emit_signal("confirm_refresh_plugin", plugin)
+func _on_CheckBox_toggled(_pressed : bool) -> void:
+	if options.get_item_count() == 0:
+		checkbox.pressed = false
+		return
+	emit_signal("request_%s_plugin" % ("enable" if _pressed else "disable"), cur_plugin)
+
+func _on_RefreshButton_pressed() -> void:
+	if options.get_item_count() == 0:
+		return
+	emit_signal("request_refresh_plugin", cur_plugin)
+
+func _on_ConfirmationDialog_confirmed() -> void:
+	emit_signal("request_enable_plugin", cur_plugin)
+	checkbox.pressed = enabled

@@ -1,137 +1,112 @@
 tool
 extends EditorPlugin
 
-const ADDONS_PATH = "res://addons/"
-const PLUGIN_CONFIG_DIR = "plugins/plugin_refresher"
-const PLUGIN_CONFIG = "settings.cfg"
-const SETTINGS = "settings"
-const SETTING_RECENT = "recently_used"
+var plugin_config = ConfigFile.new() as ConfigFile
+var refresher_scene = load("./plugin_refresher.tscn") as PackedScene
+var refresher : HBoxContainer
 
-var plugin_config = ConfigFile.new()
-var refresher
-
-func _enter_tree():
-	refresher = preload("plugin_refresher.tscn").instance()
+func _enter_tree() -> void:
+	refresher = refresher_scene.instance()
+	var _theme = get_editor_interface().get_base_control()
+	refresher.menu_icon = _theme.get_icon("GuiTabMenu", "EditorIcons")
+	refresher.refresh_icon = _theme.get_icon("Reload", "EditorIcons")
 	add_control_to_container(CONTAINER_TOOLBAR, refresher)
+	var _editor_fs: EditorFileSystem = get_editor_interface().get_resource_filesystem()
+	assert(OK == _editor_fs.connect("filesystem_changed", self, "_on_filesystem_changed"))
+	assert(OK == refresher.connect("request_refresh_plugin", self, "_on_refresh_plugin_request"))
+	assert(OK == refresher.connect("request_enable_plugin", self, "_on_enable_request", [true]))
+	assert(OK == refresher.connect("request_disable_plugin", self, "_on_enable_request", [false]))
+	assert(OK == refresher.connect("plugin_changed", self, "_on_plugin_changed"))
+	reload_plugins_list()
+	load_settings()
 
-	# Watch whether any plugin is changed, added or removed on the filesystem
-	var efs = get_editor_interface().get_resource_filesystem()
-	efs.connect("filesystem_changed", self, "_on_filesystem_changed")
-
-	refresher.connect("request_refresh_plugin", self, "_on_request_refresh_plugin")
-	refresher.connect("confirm_refresh_plugin", self, "_on_confirm_refresh_plugin")
-
-	_reload_plugins_list()
-	_load_settings()
-
-
-func _exit_tree():
-	remove_control_from_container(CONTAINER_TOOLBAR, refresher)
-	refresher.free()
-
-
-func _reload_plugins_list():
-	var refresher_dir = get_plugin_path().get_file()
-	var plugins = {}
-	var origins = {}
-
-	var dir = Directory.new()
-	dir.open(ADDONS_PATH)
-	dir.list_dir_begin(true, true)
-	var file = dir.get_next()
-	while file:
-		var addon_dir = ADDONS_PATH.plus_file(file)
-		if dir.dir_exists(addon_dir) and file != refresher_dir:
-			var display_name = file
-			var plugin_config_path = addon_dir.plus_file("plugin.cfg")
-			if not dir.file_exists(plugin_config_path):
-				file = dir.get_next()
-				continue # not a plugin
-			var plugin_cfg = ConfigFile.new()
-			plugin_cfg.load(plugin_config_path)
-			display_name = plugin_cfg.get_value("plugin", "name", file)
-			if not display_name in origins:
-				origins[display_name] = [file]
+func reload_plugins_list() -> void:
+	var _dir := Directory.new()
+	assert(OK == _dir.open("res://addons/"))
+	assert(OK == _dir.list_dir_begin(true, true))
+	var _file := _dir.get_next()
+	var _plugins := {}
+	var _origins := {}
+	while _file:
+		var _addon_dir := "res://addons/%s" % _file
+		var _is_cur_plugin := (_file == get_plugin_path().get_file())
+		if _dir.dir_exists(_addon_dir) and !_is_cur_plugin:
+			var _config_path = "%s/plugin.cfg" % _addon_dir
+			if !_dir.file_exists(_config_path):
+				_file = _dir.get_next()
+				continue
+			var _plugin_cfg := ConfigFile.new()
+			assert(OK == _plugin_cfg.load(_config_path))
+			var _p_name: String = _plugin_cfg.get_value("plugin", "name", _file)
+			if !_p_name in _origins:
+				_origins[_p_name] = [_file]
 			else:
-				origins[display_name].append(file)
-			plugins[file] = display_name
-		file = dir.get_next()
+				_origins[_p_name].append(_file)
+				_p_name = "%s (%s)" % [_p_name, _file]
+			_plugins[_file] = _p_name
+		_file = _dir.get_next()
+	refresher.update_items(_plugins)
 
-	# Specify the exact plugin name in parenthesis in case of naming collisions.
-	for display_name in origins:
-		var plugin_names = origins[display_name]
-		if plugin_names.size() > 1:
-			for n in plugin_names:
-				plugins[n] = "%s (%s)" % [display_name, n]
-
-	refresher.update_items(plugins)
-
-
-func _load_settings():
-	var path = get_config_path()
-
-	var fs = Directory.new()
-	if not fs.file_exists(path):
-		# Create new if running for the first time
-		var config = ConfigFile.new()
-		fs.make_dir_recursive(path.get_base_dir())
-		config.save(path)
-	else:
-		plugin_config.load(path)
-
-
-func _save_settings():
-	plugin_config.save(get_config_path())
-
-
-func get_config_path():
-	var dir = get_editor_interface().get_editor_settings().get_project_settings_dir()
-	var home = dir.plus_file(PLUGIN_CONFIG_DIR)
-	var path = home.plus_file(PLUGIN_CONFIG)
-
-	return path
-
-
-func _on_filesystem_changed():
-	if refresher:
-		_reload_plugins_list()
-		refresher.select_plugin(get_recent_plugin())
-
-
-func get_recent_plugin():
-	if not plugin_config.has_section_key(SETTINGS, SETTING_RECENT):
-		return null # not saved yet
-
-	var recent = plugin_config.get_value(SETTINGS, SETTING_RECENT)
-	return recent
-
-
-func _on_request_refresh_plugin(p_name):
-	assert(not p_name.empty())
-
-	var disabled = not get_editor_interface().is_plugin_enabled(p_name)
-	if disabled:
-		refresher.show_warning(p_name)
-	else:
-		refresh_plugin(p_name)
-
-
-func _on_confirm_refresh_plugin(p_name):
-	refresh_plugin(p_name)
-
-
-func get_plugin_path():
+func get_plugin_path() -> String:
 	return get_script().resource_path.get_base_dir()
 
+func load_settings()-> void:
+	var _cfg_path := get_config_path()
+	var _dir := Directory.new()
+	if !_dir.file_exists(_cfg_path):
+		var config := ConfigFile.new()
+		assert(OK == _dir.make_dir_recursive(_cfg_path.get_base_dir()))
+		assert(OK == config.save(_cfg_path))
+	else:
+		plugin_config.load(_cfg_path)
 
-func refresh_plugin(p_name):
-	print("Refreshing plugin: ", p_name)
+func get_config_path() -> String:
+	var _dir := get_editor_interface().get_editor_settings().get_project_settings_dir()
+	var _path := "%s/plugins/plugin_refresher/settings.cfg" % _dir
+	return _path
 
-	var enabled = get_editor_interface().is_plugin_enabled(p_name)
-	if enabled: # can only disable an active plugin
-		get_editor_interface().set_plugin_enabled(p_name, false)
+func _exit_tree() -> void:
+	remove_control_from_container(CONTAINER_TOOLBAR, refresher)
+	refresher.queue_free()
 
-	get_editor_interface().set_plugin_enabled(p_name, true)
+func save_settings() -> void:
+	plugin_config.save(get_config_path())
 
-	plugin_config.set_value(SETTINGS, SETTING_RECENT, p_name)
-	_save_settings()
+func _on_filesystem_changed() -> void:
+	if refresher:
+		reload_plugins_list()
+		refresher.select_plugin(get_recent_plugin())
+
+func get_recent_plugin() -> String:
+	return plugin_config.get_value("settings", "recently_used", "")
+
+func is_enabled(_p_name: String) -> bool:
+	return get_editor_interface().is_plugin_enabled(_p_name)
+
+func _on_enable_request(_p_name: String, _enable: bool) -> void:
+	assert(!_p_name.empty())
+	if is_enabled(_p_name) == _enable:
+		return
+	get_editor_interface().set_plugin_enabled(_p_name, _enable)
+	refresher.enabled = is_enabled(_p_name)
+	plugin_config.set_value("settings", "recently_used", _p_name)
+	save_settings()
+
+func _on_refresh_plugin_request(_p_name: String) -> void:
+	assert(!_p_name.empty())
+	if !is_enabled(_p_name):
+		refresher.show_warning(_p_name)
+	else:
+		refresher.emit_signal("request_disable_plugin", _p_name)
+		yield(get_tree(), "idle_frame")
+		refresher.emit_signal("request_enable_plugin", _p_name)
+
+func _on_confirm_refresh_plugin(_p_name: String)-> void:
+	refresher.emit_signal("request_enable_plugin", [_p_name])
+
+func _on_plugin_changed(_p_name: String) -> void:
+	if !refresher:
+		return
+	refresher.enabled = is_enabled(_p_name)
+	plugin_config.set_value("settings", "recently_used", _p_name)
+	save_settings()
