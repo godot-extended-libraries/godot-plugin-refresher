@@ -96,7 +96,7 @@ func _on_enable_request(plugin_name: String, enable: bool) -> void:
 	if not plugin_name or is_enabled(plugin_name) == enable:
 		return
 	get_editor_interface().set_plugin_enabled(plugin_name, enable)
-	refresher.enabled = is_enabled(plugin_name)
+	refresher.is_enabled = is_enabled(plugin_name)
 	cfg.set_value("settings", "recently_used", plugin_name)
 	_save_settings()
 
@@ -118,6 +118,6 @@ func _on_confirm_refresh_plugin(plugin_name: String) -> void:
 func _on_plugin_changed(plugin_name: String) -> void:
 	if not refresher:
 		return
-	refresher.enabled = is_enabled(plugin_name)
+	refresher.is_enabled = is_enabled(plugin_name)
 	cfg.set_value("settings", "recently_used", plugin_name)
 	_save_settings()
