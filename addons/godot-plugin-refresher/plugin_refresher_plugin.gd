@@ -29,27 +29,27 @@ func _reload_plugins_list() -> void:
 	var dir := Directory.new()
 	assert(OK == dir.open("res://addons/"))
 	assert(OK == dir.list_dir_begin(true, true))
-	var display_name := dir.get_next()
+	var plugin_name := dir.get_next()
 	var plugins := {}
 	var origins := {}
-	while display_name:
-		var addon_dir := "res://addons/%s" % display_name
-		var is_cur_plugin := (display_name == _get_plugin_path().get_file())
+	while plugin_name:
+		var addon_dir := "res://addons/%s" % plugin_name
+		var is_cur_plugin := (plugin_name == _get_plugin_path().get_file())
 		if dir.dir_exists(addon_dir) and not is_cur_plugin:
 			var config_path = "%s/plugin.cfg" % addon_dir
 			if not dir.file_exists(config_path):
-				display_name = dir.get_next()
+				plugin_name = dir.get_next()
 				continue
 			var plugin_cfg := ConfigFile.new()
 			assert(OK == plugin_cfg.load(config_path))
-			var plugin_name: String = plugin_cfg.get_value("plugin", "name", display_name)
-			if not plugin_name in origins:
-				origins[plugin_name] = [display_name]
+			var display_name: String = plugin_cfg.get_value("plugin", "name", plugin_name)
+			if not display_name in origins:
+				origins[display_name] = [plugin_name]
 			else:
-				origins[plugin_name].append(display_name)
-				plugin_name = "%s (%s)" % [plugin_name, display_name]
-			plugins[display_name] = plugin_name
-		display_name = dir.get_next()
+				origins[display_name].append(plugin_name)
+				display_name = "%s (%s)" % [display_name, plugin_name]
+			plugins[plugin_name] = display_name
+		plugin_name = dir.get_next()
 	refresher.update_items(plugins)
 
 
