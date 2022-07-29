@@ -1,4 +1,4 @@
-tool
+@tool
 extends EditorPlugin
 
 const ADDONS_PATH = "res://addons/"
@@ -11,15 +11,15 @@ var plugin_config = ConfigFile.new()
 var refresher
 
 func _enter_tree():
-	refresher = preload("plugin_refresher.tscn").instance()
+	refresher = preload("plugin_refresher.tscn").instantiate()
 	add_control_to_container(CONTAINER_TOOLBAR, refresher)
 
 	# Watch whether any plugin is changed, added or removed on the filesystem
 	var efs = get_editor_interface().get_resource_filesystem()
-	efs.connect("filesystem_changed", self, "_on_filesystem_changed")
+	efs.filesystem_changed.connect(_on_filesystem_changed)
 
-	refresher.connect("request_refresh_plugin", self, "_on_request_refresh_plugin")
-	refresher.connect("confirm_refresh_plugin", self, "_on_confirm_refresh_plugin")
+	refresher.request_refresh_plugin.connect(_on_request_refresh_plugin)
+	refresher.confirm_refresh_plugin.connect(_on_confirm_refresh_plugin)
 
 	_reload_plugins_list()
 	_load_settings()
@@ -37,7 +37,7 @@ func _reload_plugins_list():
 
 	var dir = Directory.new()
 	dir.open(ADDONS_PATH)
-	dir.list_dir_begin(true, true)
+	dir.list_dir_begin()
 	var file = dir.get_next()
 	while file:
 		var addon_dir = ADDONS_PATH.plus_file(file)
@@ -107,7 +107,7 @@ func get_recent_plugin():
 
 
 func _on_request_refresh_plugin(p_name):
-	assert(not p_name.empty())
+	assert(not p_name.is_empty())
 
 	var disabled = not get_editor_interface().is_plugin_enabled(p_name)
 	if disabled:
