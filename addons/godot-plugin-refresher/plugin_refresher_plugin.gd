@@ -1,14 +1,17 @@
 tool
 extends EditorPlugin
 
+
 const ADDONS_PATH = "res://addons/"
 const PLUGIN_CONFIG_DIR = "plugins/plugin_refresher"
 const PLUGIN_CONFIG = "settings.cfg"
 const SETTINGS = "settings"
 const SETTING_RECENT = "recently_used"
 
-var plugin_config = ConfigFile.new()
+var plugin_config := ConfigFile.new()
+var plugin_paths := {}
 var refresher
+
 
 func _enter_tree():
 	refresher = preload("plugin_refresher.tscn").instance()
@@ -31,40 +34,47 @@ func _exit_tree():
 
 
 func _reload_plugins_list():
-	var refresher_dir = get_plugin_path().get_file()
-	var plugins = {}
-	var origins = {}
+	var refresher_dir : String = get_plugin_path().get_file()
+	var cfg_paths := []
+	var plugins := {}
 
-	var dir = Directory.new()
-	dir.open(ADDONS_PATH)
-	dir.list_dir_begin(true, true)
-	var file = dir.get_next()
-	while file:
-		var addon_dir = ADDONS_PATH.plus_file(file)
-		if dir.dir_exists(addon_dir) and file != refresher_dir:
-			var display_name = file
-			var plugin_config_path = addon_dir.plus_file("plugin.cfg")
-			if not dir.file_exists(plugin_config_path):
-				file = dir.get_next()
-				continue # not a plugin
-			var plugin_cfg = ConfigFile.new()
-			plugin_cfg.load(plugin_config_path)
-			display_name = plugin_cfg.get_value("plugin", "name", file)
-			if not display_name in origins:
-				origins[display_name] = [file]
-			else:
-				origins[display_name].append(file)
-			plugins[file] = display_name
-		file = dir.get_next()
-
-	# Specify the exact plugin name in parenthesis in case of naming collisions.
-	for display_name in origins:
-		var plugin_names = origins[display_name]
-		if plugin_names.size() > 1:
-			for n in plugin_names:
-				plugins[n] = "%s (%s)" % [display_name, n]
-
+	find_cfgs(ADDONS_PATH, cfg_paths)
+	plugin_paths.clear()
+	
+	for cfg_path in cfg_paths:
+		var plugin_cfg = ConfigFile.new()
+		var ERR = plugin_cfg.load(cfg_path)
+		if ERR == OK:
+			var p_name = plugin_cfg.get_value("plugin", "name")
+			if p_name != "Godot Plugin Refresher":
+				var p_path = cfg_path.split("addons/")[-1].split("/plugin.cfg")[0]
+				plugin_paths[p_name] = p_path
+				plugins[p_path] = p_name
+		else:
+			push_error("ERROR LOADING PLUGIN FILE: %s" % ERR)
+	
+	
 	refresher.update_items(plugins)
+
+
+func find_cfgs(dir_path:String, cfgs:Array):
+	var dir := Directory.new()
+	
+	var cfg_path = dir_path.plus_file("plugin.cfg")
+	if dir.file_exists(cfg_path):
+		cfgs.append(cfg_path)
+		return
+	
+	if dir.open(dir_path) == OK:
+		dir.list_dir_begin(true)
+		
+		var file_name = dir.get_next()
+		while file_name != "":
+			
+			if dir.current_is_dir():
+				find_cfgs(dir_path.plus_file(file_name), cfgs)
+			
+			file_name = dir.get_next()
 
 
 func _load_settings():
