@@ -13,7 +13,6 @@ func _ready():
 
 
 func update_items(p_plugins):
-	print(p_plugins)
 	if not options:
 		return
 	options.clear()
@@ -28,7 +27,7 @@ func update_items(p_plugins):
 func select_plugin(p_name):
 	if not options:
 		return
-	if p_name == null or p_name.empty():
+	if p_name == null or p_name.is_empty():
 		return
 
 	for idx in options.get_item_count():

@@ -40,11 +40,11 @@ func _reload_plugins_list():
 		dir.list_dir_begin()
 		var file_name = dir.get_next()
 		while file_name != "":
-			print(file_name)
+			
 			var addon_dir = ADDONS_PATH.path_join(file_name)
 			if dir.dir_exists(addon_dir) and file_name != refresher_dir:
 				var display_name = file_name
-				print(display_name)
+				
 				var plugin_config_path = addon_dir.path_join("plugin.cfg")
 				if not dir.file_exists(plugin_config_path):
 					file_name = dir.get_next()
