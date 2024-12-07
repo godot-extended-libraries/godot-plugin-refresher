@@ -6,9 +6,10 @@ signal confirm_refresh_plugin(p_name)
 
 @onready var options = $OptionButton
 
+
 func _ready():
 	if get_tree().edited_scene_root == self:
-		return # This is the scene opened in the editor!
+		return  # This is the scene opened in the editor!
 	$RefreshButton.icon = EditorInterface.get_editor_theme().get_icon("Reload", "EditorIcons")
 
 
@@ -39,7 +40,7 @@ func select_plugin(p_name):
 
 func _on_RefreshButton_pressed():
 	if options.selected == -1:
-		return # nothing selected
+		return  # nothing selected
 
 	var plugin = options.get_item_metadata(options.selected)
 	if not plugin or plugin.is_empty():
@@ -48,10 +49,13 @@ func _on_RefreshButton_pressed():
 
 
 func show_warning(p_name):
-	$ConfirmationDialog.dialog_text = """
+	$ConfirmationDialog.dialog_text = (
+		"""
 		Plugin `%s` is currently disabled.\n
 		Do you want to enable it now?
-	""" % [p_name]
+	"""
+		% [p_name]
+	)
 	$ConfirmationDialog.popup_centered()
 
 
