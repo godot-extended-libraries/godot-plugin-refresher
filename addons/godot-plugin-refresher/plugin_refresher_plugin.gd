@@ -4,6 +4,7 @@ extends EditorPlugin
 const ADDONS_PATH := "res://addons/"
 const PLUGIN_CONFIG_DIR := "plugins/plugin_refresher"
 const PLUGIN_CONFIG := "settings.cfg"
+const PLUGIN_NAME := "Godot Plugin Refresher"
 const SETTINGS := "settings"
 const SETTING_RECENT := "recently_used"
 const Refresher := preload("plugin_refresher.gd")
@@ -33,45 +34,57 @@ func _exit_tree() -> void:
 
 
 func _reload_plugins_list() -> void:
-	var refresher_dir := get_plugin_path().get_file()
+	var cfg_paths: Array[String] = []
 	var plugins := {}
-	var origins := {}
+	var display_names_map := {} # full path to display name
 
-	var dir := DirAccess.open(ADDONS_PATH)
+	find_cfgs(ADDONS_PATH, cfg_paths)
+
+	for cfg_path in cfg_paths:
+		var plugin_cfg := ConfigFile.new()
+		var err := plugin_cfg.load(cfg_path)
+		if err:
+			push_error("ERROR LOADING PLUGIN FILE: %s" % err)
+		else:
+			var plugin_name := plugin_cfg.get_value("plugin", "name")
+			if plugin_name != PLUGIN_NAME:
+				var addon_dir_name = cfg_path.split("addons/")[-1].split("/plugin.cfg")[0]
+				plugins[addon_dir_name] = [plugin_name, cfg_path]
+
+	# This will be an array of the addon/* directory names.
+	var plugin_dirs: Array[String] = []
+	plugin_dirs.assign(plugins.keys()) # typed array "casting"
+
+	var plugin_names: Array[String] = []
+	plugin_names.assign(plugin_dirs.map(func(k): return plugins[k][0]))
+
+	for plugin_dirname in plugin_dirs:
+		var plugin_name = plugins[plugin_dirname][0]
+		var display_name = plugin_name if plugin_names.count(plugin_name) == 1 else "%s (%s)" % [plugin_name, plugin_dirname]
+		display_names_map[plugins[plugin_dirname][1]] = display_name
+
+	refresher.update_items([plugins, display_names_map])
+
+
+func find_cfgs(dir_path: String, cfgs: Array):
+	var dir := DirAccess.open(dir_path)
+	var cfg_path := dir_path.path_join("plugin.cfg")
+
+	if dir.file_exists(cfg_path):
+		cfgs.append(cfg_path)
+		return
+
 	if dir:
 		dir.list_dir_begin()
 		var file_name := dir.get_next()
 		while file_name != "":
-			var addon_dir := ADDONS_PATH.path_join(file_name)
-			if dir.dir_exists(addon_dir) and file_name != refresher_dir:
-				var display_name := file_name
-
-				var plugin_config_path := addon_dir.path_join("plugin.cfg")
-				if not dir.file_exists(plugin_config_path):
-					file_name = dir.get_next()
-					continue  # not a plugin
-				var plugin_cfg := ConfigFile.new()
-				plugin_cfg.load(plugin_config_path)
-				display_name = plugin_cfg.get_value("plugin", "name", file_name)
-				if not display_name in origins:
-					origins[display_name] = [file_name]
-				else:
-					origins[display_name].append(file_name)
-				plugins[file_name] = display_name
+			if dir.current_is_dir():
+				find_cfgs(dir_path.path_join(file_name), cfgs)
 			file_name = dir.get_next()
-
-		# Specify the exact plugin name in parenthesis in case of naming collisions.
-		for display_name in origins:
-			var plugin_names = origins[display_name]
-			if plugin_names.size() > 1:
-				for n in plugin_names:
-					plugins[n] = "%s (%s)" % [display_name, n]
-
-		refresher.update_items(plugins)
 
 
 func _load_settings() -> void:
-	var path := get_config_path()
+	var path := get_settings_path()
 
 	if not FileAccess.file_exists(path):
 		# Create new if running for the first time
@@ -83,10 +96,10 @@ func _load_settings() -> void:
 
 
 func _save_settings() -> void:
-	plugin_config.save(get_config_path())
+	plugin_config.save(get_settings_path())
 
 
-func get_config_path() -> String:
+func get_settings_path() -> String:
 	var editor_paths := EditorInterface.get_editor_paths()
 	var dir := editor_paths.get_project_settings_dir()
 
@@ -99,43 +112,45 @@ func get_config_path() -> String:
 func _on_filesystem_changed() -> void:
 	if refresher:
 		_reload_plugins_list()
-		refresher.select_plugin(get_recent_plugin())
+		var recent = get_recent_plugin()
+		if recent:
+			refresher.select_plugin(recent)
 
 
 func get_recent_plugin() -> String:
 	if not plugin_config.has_section_key(SETTINGS, SETTING_RECENT):
-		return ""  # not saved yet
+		return "" # not saved yet
 
-	var recent = plugin_config.get_value(SETTINGS, SETTING_RECENT)
-	return recent if recent != null and not recent.is_empty() else ""
+	var recent = str(plugin_config.get_value(SETTINGS, SETTING_RECENT))
+	return recent
 
 
-func _on_request_refresh_plugin(p_name: String) -> void:
-	assert(not p_name.is_empty())
+func _on_request_refresh_plugin(p_path: String) -> void:
+	assert(not p_path.is_empty())
 
-	var disabled := not EditorInterface.is_plugin_enabled(p_name)
+	var disabled := not EditorInterface.is_plugin_enabled(p_path)
 	if disabled:
-		refresher.show_warning(p_name)
+		refresher.show_warning(p_path)
 	else:
-		refresh_plugin(p_name)
+		refresh_plugin(p_path)
 
 
-func _on_confirm_refresh_plugin(p_name: String) -> void:
-	refresh_plugin(p_name)
+func _on_confirm_refresh_plugin(p_path: String) -> void:
+	refresh_plugin(p_path)
 
 
 func get_plugin_path() -> String:
 	return get_script().resource_path.get_base_dir()
 
 
-func refresh_plugin(p_name: String) -> void:
-	print("Refreshing plugin: ", p_name)
+func refresh_plugin(p_path: String) -> void:
+	print("Refreshing plugin: ", p_path)
 
-	var enabled := EditorInterface.is_plugin_enabled(p_name)
-	if enabled:  # can only disable an active plugin
-		EditorInterface.set_plugin_enabled(p_name, false)
+	var enabled := EditorInterface.is_plugin_enabled(p_path)
+	if enabled: # can only disable an active plugin
+		EditorInterface.set_plugin_enabled(p_path, false)
 
-	EditorInterface.set_plugin_enabled(p_name, true)
+	EditorInterface.set_plugin_enabled(p_path, true)
 
-	plugin_config.set_value(SETTINGS, SETTING_RECENT, p_name)
+	plugin_config.set_value(SETTINGS, SETTING_RECENT, p_path)
 	_save_settings()
