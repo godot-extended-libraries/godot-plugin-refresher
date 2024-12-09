@@ -2,7 +2,13 @@
 
 This plugin simplifies plugin development for those wanting to make tools for the Godot Editor.
 
-It adds a dropdown and refresh button to the main toolbar in the top-right corner of the Godot Editor. *Other* plugins' directory names will show up in the dropdown, and clicking the refresh button will simply toggle the plugin off and then back on.
+> The `master` branch supports Godot 4.2+. For Godot 4.0-4.1, see the `4.0` branch. For Godot 3, see the `3.x` branch.
+
+The plugin adds a dropdown and refresh button to the main toolbar in the top-right corner of the Godot Editor. *Other* plugins' names will show up in the dropdown. Clicking the refresh button will toggle the plugin off and then back on. Disabled plugins still appear in the list & be toggleable (effectively just enabling them), but will ask to confirm beforehand.
+
+Here's an example of working on a WIP internal "GodotTools" plugin amidst an in-development project:
+
+![example of dropdown](./example_dropdown.png)
 
 This makes it much easier to iterate on a single plugin since rather than having to...
 
