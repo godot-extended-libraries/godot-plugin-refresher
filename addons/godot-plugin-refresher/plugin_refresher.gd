@@ -10,7 +10,7 @@ signal confirm_refresh_plugin(p_name: String)
 func _ready() -> void:
 	if get_tree().edited_scene_root == self:
 		return # This is the scene opened in the editor!
-	$RefreshButton.icon = EditorInterface.get_editor_theme().get_icon("Reload", "EditorIcons")
+	$RefreshButton.icon = get_editor_interface().get_editor_theme().get_icon("Reload", "EditorIcons")
 
 
 func update_items(p_plugins_info: Array) -> void:
